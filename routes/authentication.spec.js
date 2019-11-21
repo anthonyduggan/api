@@ -41,6 +41,7 @@ describe('Authentication-centric routes', () => {
 
     afterAll(() => {
         server.close();
+        app.knex.destroy();
     });
 
     describe('POST - /login', () => {
