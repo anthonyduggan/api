@@ -1,0 +1,16 @@
+{
+    "argon2": {
+        "hashLength": 64,
+        "timecost": 3,
+        "memoryCost": 8192,
+        "parallelism": 1
+    },
+    "db": {
+        "client": "pg",
+        "debug": false,
+        "pool": {
+            "min": 2,
+            "max": 10
+        }
+    }
+}

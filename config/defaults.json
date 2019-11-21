@@ -1,0 +1,20 @@
+{
+    "NODE_ENV": "tests",
+    "argon2": {
+        "hashLength": 64,
+        "timecost": 1,
+        "memoryCost": 16,
+        "parallelism": 1
+    },
+    "db": {
+        "client": "sqlite3",
+        "connection": {
+            "filename": ":memory:"
+        },
+        "debug": false,
+        "pool": {
+            "min": 1,
+            "max": 1
+        }
+    }
+}

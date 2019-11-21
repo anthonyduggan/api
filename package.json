@@ -1,0 +1,45 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=tests DEBUG=api* npx jest --collectCoverage",
+    "test:watch": "NODE_ENV=tests DEBUG=api* npx jest --watchAll",
+    "start": "node server.js",
+    "start:dev": "DEBUG=api* npx nodemon server.js",
+    "start:dbg": "DEBUG=api* npx nodemon --inspect server.js",
+    "migrate": "npx knex migrate:latest",
+    "migrate:rollback": "npx knex migrate:rollback",
+    "migrate:prod": "NODE_ENV=production db__connectionString=$(secret=$(aws secretsmanager get-secret-value --secret-id anthonyduggan-postgres-api_user --query 'SecretString' --output text) && echo ${secret/\\$/%24}) npx knex migrate:latest"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^6.6.0",
+    "jest": "^24.9.0",
+    "koa-logger": "^3.2.0",
+    "nodemon": "^2.0.0",
+    "supertest": "^4.0.2"
+  },
+  "dependencies": {
+    "@bugsnag/js": "^6.4.3",
+    "@bugsnag/plugin-koa": "^6.4.1",
+    "@koa/cors": "^3.0.0",
+    "argon2": "^0.25.1",
+    "aws-sdk": "^2.576.0",
+    "aws-xray-sdk-core": "^2.5.0",
+    "debug": "^4.1.1",
+    "ejs": "^2.7.4",
+    "joi": "^14.3.1",
+    "knex": "^0.20.2",
+    "koa": "^2.11.0",
+    "koa-body": "^4.1.1",
+    "koa-respond": "^2.1.0",
+    "koa-router": "^7.4.0",
+    "nanoid": "^2.1.7",
+    "nconf": "^0.10.0",
+    "objection": "^1.6.11",
+    "pg": "^7.14.0"
+  }
+}
