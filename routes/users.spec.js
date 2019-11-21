@@ -5,9 +5,10 @@ const argon2 = require('argon2');
 const app = require('../app');
 const config = require('../config');
 const User = require('../models/User');
+const UserRole = require('../models/UserRole');
 const ResetToken = require('../models/ResetToken');
 
-async function _createRandomUser(verified=true) {
+async function _createRandomUser(verified=true, admin=false) {
     const name = await nanoid(10);
     const email = `${name}@test.test`;
     const password = await nanoid();
@@ -24,6 +25,14 @@ async function _createRandomUser(verified=true) {
     await user
         .$relatedQuery('session_tokens')
         .insert({id: session_token});
+
+    if (admin === true) {
+        const admin_id = (await UserRole.query()
+            .findOne({code: 'admin'})).id
+        await user
+            .$relatedQuery('roles')
+            .relate(admin_id);
+    }
 
     user = user.toJSON();
     user.password = password;
@@ -88,6 +97,27 @@ describe('User-centric routes', () => {
             expect(response.body.results[0]).toHaveProperty('name');
             expect(response.body.results[0]).toHaveProperty('roles');
             expect(response.body.results[0]).not.toHaveProperty('email');
+            expect(response).toHaveProperty('body.paging');
+            expect(response).toHaveProperty('body.paging.total_entries');
+            expect(response).toHaveProperty('body.paging.page_count');
+            expect(response).toHaveProperty('body.paging.page');
+        });
+
+        test('should get different info if authed user is admin', async () => {
+            // Make sure at least one user exists, make them an admin
+            const user = await _createRandomUser(true, true);
+
+            const response = await request(server)
+                .get('/users')
+                .set('Authorization', user.token);
+
+            expect(response.status).toBe(200);
+            expect(response).toHaveProperty('body.results');
+            expect(response.body.results.length).toBeGreaterThan(0);
+            expect(response.body.results[0]).toHaveProperty('id');
+            expect(response.body.results[0]).toHaveProperty('name');
+            expect(response.body.results[0]).toHaveProperty('roles');
+            expect(response.body.results[0]).toHaveProperty('email');
             expect(response).toHaveProperty('body.paging');
             expect(response).toHaveProperty('body.paging.total_entries');
             expect(response).toHaveProperty('body.paging.page_count');
