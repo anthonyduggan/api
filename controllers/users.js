@@ -13,20 +13,16 @@ async function login(ctx) {
         active: true
     });
     let success = false;
-    let token;
+    const token = await nanoid();
     if (user) {
-        try {
-            await argon2.verify(user.password, ctx.request.body.password);
-            success = true;
-        } catch(err) {} // eslint-disable-line
-        token = await nanoid();
+        success = await argon2.verify(user.password, ctx.request.body.password);
+    }
+    if (success) {
         await user.$relatedQuery('session_tokens')
             .insert({
                 id: token,
                 active: true
             });
-    }
-    if (success) {
         delete user.password;
         ctx.ok({
             user,

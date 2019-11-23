@@ -6,6 +6,7 @@ const app = require('../app');
 const config = require('../config');
 const User = require('../models/User');
 const ResetToken = require('../models/ResetToken');
+const SessionToken = require('../models/SessionToken');
 
 async function _createRandomUser(verified=false) {
     const name = await nanoid(10);
@@ -45,7 +46,12 @@ describe('Authentication-centric routes', () => {
     });
 
     describe('POST - /login', () => {
-        test('should reject bad credentials', async () => {
+        test('should 401 and not make a token for a user that doesnt exist', async () => {
+            const tokenCountQuery = SessionToken.query()
+                .first()
+                .count('id as count');
+            const startTokenCount = parseInt((await tokenCountQuery).count);
+
             const response = await request(server)
                 .post('/login')
                 .send({
@@ -53,8 +59,33 @@ describe('Authentication-centric routes', () => {
                     password: 'asdfasdf123!'
                 });
 
+            const endTokenCount = parseInt((await tokenCountQuery).count);
+
             expect(response.status).toBe(401);
             expect(response.body.error.code).toBe('INVALID_EMAIL_OR_PASSWORD');
+            expect(endTokenCount).toEqual(startTokenCount);
+        });
+
+        test('should 401 and not make a token for a user that does exist', async () => {
+            const user = await _createRandomUser(true);
+
+            const tokenCountQuery = SessionToken.query()
+                .first()
+                .count('id as count');
+            const startTokenCount = parseInt((await tokenCountQuery).count);
+
+            const response = await request(server)
+                .post('/login')
+                .send({
+                    email: user.email,
+                    password: `test${user.password}`
+                });
+
+            const endTokenCount = parseInt((await tokenCountQuery).count);
+
+            expect(response.status).toBe(401);
+            expect(response.body.error.code).toBe('INVALID_EMAIL_OR_PASSWORD');
+            expect(endTokenCount).toEqual(startTokenCount);
         });
 
         test('should return a token for good credentials', async () => {
