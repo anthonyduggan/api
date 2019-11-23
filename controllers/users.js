@@ -16,6 +16,12 @@ async function login(ctx) {
     const token = await nanoid();
     if (user) {
         success = await argon2.verify(user.password, ctx.request.body.password);
+    } else {
+        /*
+            In an attempt to mitigate some very rudimentary timing attacks
+            just verify a real argon hash against a bad password for that hash
+        */
+        await argon2.verify('$argon2i$v=19$m=16,t=3,p=1$eMT+5sRCXUr6tebODeXAFA$gVinmsrAiA9yNyvkHTN+8+oKpYCzPZECxuxDL8HVUai1lXWb9Hf84aTWCWC3VhjVKJ+TtnrAktKqP8kPS5/BIA', 'notarealpassword');
     }
     if (success) {
         await user.$relatedQuery('session_tokens')
