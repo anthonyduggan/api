@@ -22,7 +22,8 @@ async function login(ctx) {
         token = await nanoid();
         await user.$relatedQuery('session_tokens')
             .insert({
-                id: token
+                id: token,
+                active: true
             });
     }
     if (success) {
