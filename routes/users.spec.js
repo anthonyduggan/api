@@ -1,6 +1,7 @@
 const request = require('supertest');
 const nanoid = require('nanoid/async');
 const argon2 = require('argon2');
+const crypto = require('crypto');
 
 const app = require('../app');
 const config = require('../config');
@@ -22,9 +23,10 @@ async function _createRandomUser(verified=true, admin=false) {
         });
 
     const session_token = await nanoid();
+    const hashedToken = crypto.createHash('sha3-512').update(session_token).digest('hex')
     await user
         .$relatedQuery('session_tokens')
-        .insert({id: session_token});
+        .insert({id: hashedToken});
 
     if (admin === true) {
         const admin_id = (await UserRole.query()

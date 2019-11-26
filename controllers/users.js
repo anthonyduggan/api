@@ -1,4 +1,5 @@
 const argon2 = require('argon2');
+const crypto = require('crypto');
 const nanoid = require('nanoid/async');
 const { transaction } = require('objection');
 const config = require('../config');
@@ -24,9 +25,10 @@ async function login(ctx) {
         await argon2.verify('$argon2i$v=19$m=16,t=3,p=1$eMT+5sRCXUr6tebODeXAFA$gVinmsrAiA9yNyvkHTN+8+oKpYCzPZECxuxDL8HVUai1lXWb9Hf84aTWCWC3VhjVKJ+TtnrAktKqP8kPS5/BIA', 'notarealpassword');
     }
     if (success) {
+        const hashedToken = crypto.createHash('sha3-512').update(token).digest('hex');
         await user.$relatedQuery('session_tokens')
             .insert({
-                id: token,
+                id: hashedToken,
                 active: true
             });
         delete user.password;
@@ -48,9 +50,10 @@ async function forgot(ctx) {
     const user = await User.query().findOne('email', email);
     if (user) {
         const resetToken = await nanoid();
+        const hashedToken = crypto.createHash('sha3-512').update(resetToken).digest('hex');
         await user.$relatedQuery('reset_tokens')
             .insert({
-                id: resetToken,
+                id: hashedToken,
                 active: true
             });
 
@@ -67,9 +70,10 @@ async function reset(ctx) {
     const token = ctx.params.token;
     const password = ctx.request.body.password;
 
+    const hashedToken = crypto.createHash('sha3-512').update(token).digest('hex');
     const reset_token = await ResetToken.query()
         .findOne({
-            id: token,
+            id: hashedToken,
             active: true
         })
         .eager('user');

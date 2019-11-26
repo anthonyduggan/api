@@ -1,6 +1,7 @@
 const request = require('supertest');
 const nanoid = require('nanoid/async');
 const argon2 = require('argon2');
+const crypto = require('crypto');
 
 const app = require('../app');
 const config = require('../config');
@@ -27,10 +28,12 @@ async function _createRandomUser(verified=false) {
 
 async function _insertResetTokenByEmail(email) {
     const reset_token = await nanoid();
+    const hashedToken = crypto.createHash('sha3-512').update(reset_token).digest('hex');
     const user = await User.query().findOne({email: email});
     await user
         .$relatedQuery('reset_tokens')
-        .insert({id: reset_token, active: true});
+        .insert({id: hashedToken, active: true});
+    return reset_token;
 }
 
 let server;
@@ -204,40 +207,30 @@ describe('Authentication-centric routes', () => {
             test('it should get deactivated', async () => {
                 const user = await _createRandomUser();
 
-                await _insertResetTokenByEmail(user.email);
-
-                let token = await ResetToken.query()
-                    .first('reset_tokens.id')
-                    .join('users', 'reset_tokens.user_id', 'users.id')
-                    .where('users.email', user.email);
+                const token = await _insertResetTokenByEmail(user.email);
 
                 const response = await request(server)
-                    .post(`/reset/${token.id}`)
+                    .post(`/reset/${token}`)
                     .send({
                         password: user.password + 'a'
                     });
 
-                token = await ResetToken.query()
+                const new_token = await ResetToken.query()
                     .first('id')
-                    .where('id', token.id)
+                    .where('id', token)
                     .andWhere('active', true);
 
                 expect(response.status).toBe(204);
-                expect(token).toBe(undefined);
+                expect(new_token).toBe(undefined);
             });
 
             test('should get an ok response', async () => {
                 const user = await _createRandomUser();
 
-                await _insertResetTokenByEmail(user.email);
-
-                const token = await ResetToken.query()
-                    .first('reset_tokens.id')
-                    .join('users', 'reset_tokens.user_id', 'users.id')
-                    .where('users.email', user.email);
+                const token = await _insertResetTokenByEmail(user.email);
 
                 const response = await request(server)
-                    .post(`/reset/${token.id}`)
+                    .post(`/reset/${token}`)
                     .send({
                         password: user.password + 'a'
                     });
