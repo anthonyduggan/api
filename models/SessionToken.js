@@ -10,7 +10,7 @@ class SessionToken extends Model {
             type: 'object',
             properties: {
                 id: {type: 'string'},
-                user_id: {type: 'integer'}
+                user_id: {type: 'integer'} // eslint-disable-line camelcase
             }
         };
     }

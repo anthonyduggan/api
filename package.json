@@ -6,6 +6,7 @@
   "scripts": {
     "test": "NODE_ENV=tests DEBUG=api* npx jest --collectCoverage",
     "test:watch": "NODE_ENV=tests DEBUG=api* npx jest --watchAll",
+    "lint": "npx eslint .",
     "start": "node server.js",
     "start:dev": "DEBUG=api* npx nodemon server.js",
     "start:dbg": "DEBUG=api* npx nodemon --inspect server.js",
@@ -16,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^6.6.0",
+    "eslint": "^6.7.1",
     "jest": "^24.9.0",
     "koa-logger": "^3.2.0",
     "nodemon": "^2.0.0",

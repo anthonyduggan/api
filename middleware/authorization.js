@@ -14,7 +14,7 @@ module.exports = (allowedRoles = ['user']) => {
                 return;
             }
 
-            const intersection = allowedRoles.filter(r => ctx.state.user.roles.map(r => r.code).includes(r));
+            const intersection = allowedRoles.filter((r) => ctx.state.user.roles.map((r) => r.code).includes(r));
             if (intersection.length === 0) {
                 ctx.forbidden({
                     error: {

@@ -35,7 +35,7 @@ class UserModel extends Model {
                     }
                 }
             },
-            session_tokens: {
+            session_tokens: { // eslint-disable-line camelcase
                 relation: Model.HasManyRelation,
                 modelClass: SessionToken,
                 join: {
@@ -43,7 +43,7 @@ class UserModel extends Model {
                     to: 'session_tokens.user_id'
                 }
             },
-            reset_tokens: {
+            reset_tokens: { // eslint-disable-line camelcase
                 relation: Model.HasManyRelation,
                 modelClass: ResetToken,
                 join: {

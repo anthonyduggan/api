@@ -5,8 +5,8 @@ class IncomingRequestData {
     constructor(ctx) {
         this.request = {
             method: ctx.method,
-            user_agent: ctx.headers['user-agent'] || '',
-            client_ip: getClientIp(ctx),
+            user_agent: ctx.headers['user-agent'] || '', // eslint-disable-line camelcase
+            client_ip: getClientIp(ctx), // eslint-disable-line camelcase
             url: ctx.request.path || ''
         };
     }
@@ -17,7 +17,7 @@ class IncomingRequestData {
         };
 
         if (ctx.response.header['content-length']) {
-            this.response.content_length = ctx.response.header['content-lenght'];
+            this.response.content_length = ctx.response.header['content-lenght']; // eslint-disable-line camelcase
         }
     }
 }

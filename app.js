@@ -8,7 +8,7 @@ AWS.config.update({region: 'us-east-1'});
 
 const config = require('./config');
 
-const knex_config = {
+const knexConfig = {
     debug: config.get('db:debug'),
     client: config.get('db:client'),
     connection: config.get('db:connection'),
@@ -17,12 +17,12 @@ const knex_config = {
 };
 
 if (config.get('NODE_ENV') === 'tests') {
-    knex_config.log = {
+    knexConfig.log = {
         warn(){} // Suppress warnings while running tests
     };
 }
 
-const knex = Knex(knex_config);
+const knex = Knex(knexConfig);
 
 Model.knex(knex);
 

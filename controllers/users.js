@@ -71,22 +71,22 @@ async function reset(ctx) {
     const password = ctx.request.body.password;
 
     const hashedToken = crypto.createHash('sha3-512').update(token).digest('hex');
-    const reset_token = await ResetToken.query()
+    const resetToken = await ResetToken.query()
         .findOne({
             id: hashedToken,
             active: true
         })
         .eager('user');
     let success = false;
-    if (reset_token && reset_token.user) {
+    if (resetToken && resetToken.user) {
         const hashedPassword = await argon2.hash(password, config.get('argon2'));
         const knex = ResetToken.knex();
         await transaction(knex, async (trx) => {
-            await reset_token
+            await resetToken
                 .$query(trx)
                 .patch({active: false});
 
-            await reset_token.user
+            await resetToken.user
                 .$query(trx)
                 .patch({
                     verified: true,
@@ -96,8 +96,8 @@ async function reset(ctx) {
         });
     }
     if (success) {
-        await emailer.send(reset_token.user.email, 'noreply@anthonyduggan.com', 'password_was_changed', {
-            user: reset_token.user
+        await emailer.send(resetToken.user.email, 'noreply@anthonyduggan.com', 'password_was_changed', {
+            user: resetToken.user
         });
         ctx.noContent();
     } else {
@@ -112,13 +112,13 @@ async function reset(ctx) {
 async function create(ctx) {
     const token = await nanoid();
 
-    const new_user = await User.query()
+    const newUser = await User.query()
         .insertGraph({
             email: ctx.request.body.email,
             name: ctx.request.body.name,
-            reset_tokens: [{id: token, active: true}]
+            reset_tokens: [{id: token, active: true}] // eslint-disable-line camelcase
         });
-    ctx.created(new_user);
+    ctx.created(newUser);
 
     // Skip email sending if running tests
     if (config.get('NODE_ENV') === 'tests') {
@@ -134,8 +134,8 @@ async function create(ctx) {
 
 async function list(ctx) {
     let {count = 10, page = 1} = ctx.query;
-    const is_admin = ctx.state.user.roles.map(r => r.code).includes('admin');
-    if (is_admin === false) {
+    const isAdmin = ctx.state.user.roles.map((r) => r.code).includes('admin');
+    if (isAdmin === false) {
         count = Math.min(count, 10);
     }
 
@@ -144,18 +144,18 @@ async function list(ctx) {
         .where('active', true)
         .eager('roles')
         .page(page-1, count);
-    if (is_admin === true) {
+    if (isAdmin === true) {
         query = query
             .select('users.email');
     }
     const result = await query;
-    const page_count = Math.ceil(result.total/count);
+    const pageCount = Math.ceil(result.total/count);
 
     const response = {
         results: result.results,
         paging: {
-            total_entries: result.total,
-            page_count: page_count,
+            totalEntries: result.total,
+            pageCount: pageCount,
             page: parseInt(page),
         }
     };
@@ -163,16 +163,16 @@ async function list(ctx) {
 }
 
 async function get(ctx) {
-    const user_id = parseInt(ctx.params.user_id);
-    const is_admin = ctx.state.user.roles.map(r => r.code).includes('admin');
+    const userId = parseInt(ctx.params.user_id);
+    const isAdmin = ctx.state.user.roles.map((r) => r.code).includes('admin');
     let user;
     try {
         let query = User.query()
-            .findById(user_id)
+            .findById(userId)
             .select('users.id', 'users.created_at', 'users.name', 'users.verified', 'users.active')
             .where('active', true)
             .eager('roles');
-        if (is_admin === true || ctx.state.user.id === user_id) {
+        if (isAdmin === true || ctx.state.user.id === userId) {
             query = query
                 .select('users.email');
         }
@@ -189,14 +189,14 @@ async function get(ctx) {
 }
 
 async function me(ctx) {
-    const user_id = ctx.state.user.id;
-    if (user_id == undefined) {
+    const userId = ctx.state.user.id;
+    if (userId === undefined) {
         ctx.unauthorized();
         return;
     }
 
     const user = await User.query()
-        .findById(user_id)
+        .findById(userId)
         .select('users.id', 'users.created_at', 'users.name', 'users.verified', 'users.active', 'users.email')
         .where('active', true)
         .eager('roles');
@@ -205,23 +205,18 @@ async function me(ctx) {
 }
 
 async function update(ctx) {
-    const user_id = parseInt(ctx.params.user_id);
+    const userId = parseInt(ctx.params.user_id);
     const email = ctx.request.body.email;
     const name = ctx.request.body.name;
-    let roles = ctx.request.body.roles;
 
-    let has_permission = false;
-    if (ctx.state.user.id === user_id || ctx.state.user.roles.map(r => r.code).includes('admin')) {
-        has_permission = true;
+    let hasPermission = false;
+    if (ctx.state.user.id === userId || ctx.state.user.roles.map((r) => r.code).includes('admin')) {
+        hasPermission = true;
     }
 
-    if (has_permission === true) {
-        if (ctx.request.body.roles !== undefined) {
-            roles = ctx.request.body.roles;
-        }
-
-        const updated_user = await User.query()
-            .patchAndFetchById(user_id, {
+    if (hasPermission === true) {
+        const updatedUser = await User.query()
+            .patchAndFetchById(userId, {
                 email,
                 name
             })
@@ -229,7 +224,7 @@ async function update(ctx) {
 
         // TODO: implement role updating, probably transact the whole thing with updating the user
 
-        ctx.ok(updated_user);
+        ctx.ok(updatedUser);
     } else {
         ctx.forbidden({
             error: {

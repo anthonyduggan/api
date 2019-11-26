@@ -13,12 +13,12 @@ async function _createRandomUser(verified=false) {
     const name = await nanoid(10);
     const email = `${name}@test.test`;
     const password = await nanoid();
-    const hashed_password = await argon2.hash(password, config.get('argon2'));
+    const hashedPassword = await argon2.hash(password, config.get('argon2'));
     let user = (await User.query()
         .insertAndFetch({
             email,
             name,
-            password: hashed_password,
+            password: hashedPassword,
             verified
         })).toJSON();
     user.password = password;
@@ -27,13 +27,13 @@ async function _createRandomUser(verified=false) {
 }
 
 async function _insertResetTokenByEmail(email) {
-    const reset_token = await nanoid();
-    const hashedToken = crypto.createHash('sha3-512').update(reset_token).digest('hex');
+    const resetToken = await nanoid();
+    const hashedToken = crypto.createHash('sha3-512').update(resetToken).digest('hex');
     const user = await User.query().findOne({email: email});
     await user
         .$relatedQuery('reset_tokens')
         .insert({id: hashedToken, active: true});
-    return reset_token;
+    return resetToken;
 }
 
 let server;
@@ -190,10 +190,10 @@ describe('Authentication-centric routes', () => {
 
         describe('if token does not exist', () => {
             test('should get code INVALID_RESET_TOKEN', async () => {
-                const bad_token = await nanoid(10);
+                const badToken = await nanoid(10);
 
                 const response = await request(server)
-                    .post(`/reset/${bad_token}`)
+                    .post(`/reset/${badToken}`)
                     .send({
                         password: 'testpassword123'
                     });
@@ -215,13 +215,13 @@ describe('Authentication-centric routes', () => {
                         password: user.password + 'a'
                     });
 
-                const new_token = await ResetToken.query()
+                const newToken = await ResetToken.query()
                     .first('id')
                     .where('id', token)
                     .andWhere('active', true);
 
                 expect(response.status).toBe(204);
-                expect(new_token).toBe(undefined);
+                expect(newToken).toBe(undefined);
             });
 
             test('should get an ok response', async () => {

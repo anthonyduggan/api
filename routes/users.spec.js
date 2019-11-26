@@ -13,32 +13,32 @@ async function _createRandomUser(verified=true, admin=false) {
     const name = await nanoid(10);
     const email = `${name}@test.test`;
     const password = await nanoid();
-    const hashed_password = await argon2.hash(password, config.get('argon2'));
+    const hashedPassword = await argon2.hash(password, config.get('argon2'));
     let user = await User.query()
         .insertAndFetch({
             email,
             name,
-            password: hashed_password,
+            password: hashedPassword,
             verified
         });
 
-    const session_token = await nanoid();
-    const hashedToken = crypto.createHash('sha3-512').update(session_token).digest('hex')
+    const sessionToken = await nanoid();
+    const hashedToken = crypto.createHash('sha3-512').update(sessionToken).digest('hex');
     await user
         .$relatedQuery('session_tokens')
         .insert({id: hashedToken});
 
     if (admin === true) {
-        const admin_id = (await UserRole.query()
-            .findOne({code: 'admin'})).id
+        const adminId = (await UserRole.query()
+            .findOne({code: 'admin'})).id;
         await user
             .$relatedQuery('roles')
-            .relate(admin_id);
+            .relate(adminId);
     }
 
     user = user.toJSON();
     user.password = password;
-    user.token = session_token;
+    user.token = sessionToken;
 
     return user;
 }
@@ -100,8 +100,8 @@ describe('User-centric routes', () => {
             expect(response.body.results[0]).toHaveProperty('roles');
             expect(response.body.results[0]).not.toHaveProperty('email');
             expect(response).toHaveProperty('body.paging');
-            expect(response).toHaveProperty('body.paging.total_entries');
-            expect(response).toHaveProperty('body.paging.page_count');
+            expect(response).toHaveProperty('body.paging.totalEntries');
+            expect(response).toHaveProperty('body.paging.pageCount');
             expect(response).toHaveProperty('body.paging.page');
         });
 
@@ -121,8 +121,8 @@ describe('User-centric routes', () => {
             expect(response.body.results[0]).toHaveProperty('roles');
             expect(response.body.results[0]).toHaveProperty('email');
             expect(response).toHaveProperty('body.paging');
-            expect(response).toHaveProperty('body.paging.total_entries');
-            expect(response).toHaveProperty('body.paging.page_count');
+            expect(response).toHaveProperty('body.paging.totalEntries');
+            expect(response).toHaveProperty('body.paging.pageCount');
             expect(response).toHaveProperty('body.paging.page');
         });
     });
@@ -159,18 +159,18 @@ describe('User-centric routes', () => {
         test('should update the user', async () => {
             const user = await _createRandomUser();
 
-            const new_name = `${user.name}_post_update`;
+            const newName = `${user.name}_post_update`;
             const response = await request(server)
                 .put(`/users/${user.id}`)
                 .set('Authorization', user.token)
                 .send({
                     email: user.email,
-                    name: new_name
+                    name: newName
                 });
 
             expect(response.status).toBe(200);
             expect(response).toHaveProperty('body.name');
-            expect(response.body.name).toBe(new_name);
+            expect(response.body.name).toBe(newName);
             expect(response).toHaveProperty('body.roles');
             expect(response).toHaveProperty('body.email');
             expect(response).toHaveProperty('body.active');
@@ -178,11 +178,11 @@ describe('User-centric routes', () => {
         });
         test('should get forbidden if not the user in question', async () => {
             const user = await _createRandomUser();
-            const other_user = await _createRandomUser();
+            const otherUser = await _createRandomUser();
 
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', other_user.token)
+                .set('Authorization', otherUser.token)
                 .send({
                     email: user.email,
                     name: user.name
