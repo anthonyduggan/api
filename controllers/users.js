@@ -208,23 +208,51 @@ async function update(ctx) {
     const userId = parseInt(ctx.params.user_id);
     const email = ctx.request.body.email;
     const name = ctx.request.body.name;
+    const roles = ctx.request.body.roles;
 
-    let hasPermission = false;
-    if (ctx.state.user.id === userId || ctx.state.user.roles.map((r) => r.code).includes('admin')) {
-        hasPermission = true;
-    }
+    const isUser = ctx.state.user.id === userId;
+    const isAdmin = ctx.state.user.roles.map((r) => r.code).includes('admin');
+    const hasPermission = isUser || isAdmin;
 
     if (hasPermission === true) {
-        const updatedUser = await User.query()
+        let user = await User.query()
             .patchAndFetchById(userId, {
                 email,
                 name
             })
             .eager('roles');
 
-        // TODO: implement role updating, probably transact the whole thing with updating the user
+        if (isAdmin === true) {
+            const existingRoles = user.roles.map((r) => r.code);
 
-        ctx.ok(updatedUser);
+            await user
+                .$relatedQuery('roles')
+                .unrelate()
+                .whereNotIn('code', roles);
+
+            /*
+                The jank levels are high but the alternative was to loop over
+                every role that needed to be removed an execute a new query on
+                it since Objection only supports multi insert on postgres
+            */
+            const knex = user.$knex();
+            await knex
+                .from('user_role_members')
+                .from(knex.raw('?? (??, ??)', ['user_role_members', 'user_id', 'user_role_id']))
+                .insert(function() {
+                    this
+                        .select(knex.raw('? as ??', [userId, 'user_id']), 'id as user_role_id')
+                        .from('user_roles')
+                        .whereIn('code', roles)
+                        .whereNotIn('code', existingRoles);
+                });
+
+            user = await User.query()
+                .findById(userId)
+                .eager('roles');
+        }
+
+        ctx.ok(user);
     } else {
         ctx.forbidden({
             error: {

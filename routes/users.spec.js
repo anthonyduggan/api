@@ -192,6 +192,55 @@ describe('User-centric routes', () => {
             expect(response).toHaveProperty('body.error.code');
             expect(response.body.error.code).toBe('FORBIDDEN');
         });
+        test('should not update roles if not an admin', async () => {
+            const user = await _createRandomUser();
+
+            const response = await request(server)
+                .put(`/users/${user.id}`)
+                .set('Authorization', user.token)
+                .send({
+                    email: `${user.email}update`,
+                    name: `${user.name}update`,
+                    roles: ['admin']
+                });
+
+            expect(response.status).toBe(200);
+            expect(response).toHaveProperty('body.roles');
+            expect(response.body.roles.length).toBe(0);
+        });
+        test('should remove extra roles', async () => {
+            const user = await _createRandomUser(true, true);
+
+            const response = await request(server)
+                .put(`/users/${user.id}`)
+                .set('Authorization', user.token)
+                .send({
+                    email: `${user.email}update`,
+                    name: `${user.name}update`,
+                    roles: []
+                });
+
+            expect(response.status).toBe(200);
+            expect(response).toHaveProperty('body.roles');
+            expect(response.body.roles.length).toBe(0);
+        });
+        test('should add missing roles', async () => {
+            const user = await _createRandomUser();
+            const adminUser = await _createRandomUser(true, true);
+
+            const response = await request(server)
+                .put(`/users/${user.id}`)
+                .set('Authorization', adminUser.token)
+                .send({
+                    email: `${user.email}update`,
+                    name: `${user.name}update`,
+                    roles: ['admin']
+                });
+
+            expect(response.status).toBe(200);
+            expect(response).toHaveProperty('body.roles');
+            expect(response.body.roles.length).toBe(1);
+        });
     });
     describe('GET - /users/me', () => {
         test('should get unauthorized with no token', async () => {
