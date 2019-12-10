@@ -8,6 +8,7 @@ const config = require('../config');
 const User = require('../models/User');
 const ResetToken = require('../models/ResetToken');
 const SessionToken = require('../models/SessionToken');
+const APIKey = require('../models/APIKey');
 
 async function _createRandomUser(verified=false) {
     const name = await nanoid(10);
@@ -36,11 +37,20 @@ async function _insertResetTokenByEmail(email) {
     return resetToken;
 }
 
+async function _insertApiKey() {
+    const key = await nanoid();
+    const hashedKey = crypto.createHash('sha3-512').update(key).digest('hex');
+    await APIKey.query().insert({id: hashedKey, active: true});
+    return key;
+}
+
 let server;
+let apiKey;
 describe('Authentication-centric routes', () => {
     beforeAll(async () => {
         await app.knex.migrate.latest(require('../knexfile').migrations);
         server = app.listen();
+        apiKey = await _insertApiKey();
     });
 
     afterAll(() => {
@@ -57,6 +67,7 @@ describe('Authentication-centric routes', () => {
 
             const response = await request(server)
                 .post('/login')
+                .set({'x-api-key': apiKey})
                 .send({
                     email: 'bad@bad.bad',
                     password: 'asdfasdf123!'
@@ -79,6 +90,7 @@ describe('Authentication-centric routes', () => {
 
             const response = await request(server)
                 .post('/login')
+                .set({'x-api-key': apiKey})
                 .send({
                     email: user.email,
                     password: `test${user.password}`
@@ -96,6 +108,7 @@ describe('Authentication-centric routes', () => {
 
             const response = await request(server)
                 .post('/login')
+                .set({'x-api-key': apiKey})
                 .send({
                     email: user.email,
                     password: user.password
@@ -115,6 +128,7 @@ describe('Authentication-centric routes', () => {
 
                 const response = await request(server)
                     .post('/reset')
+                    .set({'x-api-key': apiKey})
                     .send({
                         email: user.email
                     });
@@ -134,6 +148,7 @@ describe('Authentication-centric routes', () => {
 
                 await request(server)
                     .post('/reset')
+                    .set({'x-api-key': apiKey})
                     .send({
                         email: user.email
                     });
@@ -152,6 +167,7 @@ describe('Authentication-centric routes', () => {
 
                 const response = await request(server)
                     .post('/reset')
+                    .set({'x-api-key': apiKey})
                     .send({
                         email
                     });
@@ -171,6 +187,7 @@ describe('Authentication-centric routes', () => {
 
                 await request(server)
                     .post('/reset')
+                    .set({'x-api-key': apiKey})
                     .send({
                         email
                     });
@@ -194,6 +211,7 @@ describe('Authentication-centric routes', () => {
 
                 const response = await request(server)
                     .post(`/reset/${badToken}`)
+                    .set({'x-api-key': apiKey})
                     .send({
                         password: 'testpassword123'
                     });
@@ -211,6 +229,7 @@ describe('Authentication-centric routes', () => {
 
                 const response = await request(server)
                     .post(`/reset/${token}`)
+                    .set({'x-api-key': apiKey})
                     .send({
                         password: user.password + 'a'
                     });
@@ -231,6 +250,7 @@ describe('Authentication-centric routes', () => {
 
                 const response = await request(server)
                     .post(`/reset/${token}`)
+                    .set({'x-api-key': apiKey})
                     .send({
                         password: user.password + 'a'
                     });

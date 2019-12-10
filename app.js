@@ -67,6 +67,7 @@ app.use(require('./middleware/unhandled_error'));
 
 app.on('error', debug);
 
+app.use(require('./middleware/api_key'));
 app.use(require('./middleware/authentication'));
 
 const Body = require('koa-body');

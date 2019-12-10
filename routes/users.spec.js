@@ -8,6 +8,7 @@ const config = require('../config');
 const User = require('../models/User');
 const UserRole = require('../models/UserRole');
 const ResetToken = require('../models/ResetToken');
+const APIKey = require('../models/APIKey');
 
 async function _createRandomUser(verified=true, admin=false) {
     const name = await nanoid(10);
@@ -43,11 +44,20 @@ async function _createRandomUser(verified=true, admin=false) {
     return user;
 }
 
+async function _insertApiKey() {
+    const key = await nanoid();
+    const hashedKey = crypto.createHash('sha3-512').update(key).digest('hex');
+    await APIKey.query().insert({id: hashedKey, active: true});
+    return key;
+}
+
 let server;
+let apiKey;
 describe('User-centric routes', () => {
     beforeAll(async () => {
         await app.knex.migrate.latest(require('../knexfile').migrations);
         server = app.listen();
+        apiKey = await _insertApiKey();
     });
 
     afterAll(() => {
@@ -70,6 +80,7 @@ describe('User-centric routes', () => {
             const email = `${name}@test.test`;
             const response = await request(server)
                 .post('/users')
+                .set({'x-api-key': apiKey})
                 .send({
                     email: email,
                     name: name
@@ -90,7 +101,8 @@ describe('User-centric routes', () => {
             await _createRandomUser();
 
             const response = await request(server)
-                .get('/users');
+                .get('/users')
+                .set({'x-api-key': apiKey});
 
             expect(response.status).toBe(200);
             expect(response).toHaveProperty('body.results');
@@ -111,7 +123,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .get('/users')
-                .set('Authorization', user.token);
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                });
 
             expect(response.status).toBe(200);
             expect(response).toHaveProperty('body.results');
@@ -131,7 +146,8 @@ describe('User-centric routes', () => {
             const user = await _createRandomUser();
 
             const response = await request(server)
-                .get(`/users/${user.id}`);
+                .get(`/users/${user.id}`)
+                .set({'x-api-key': apiKey});
 
             expect(response.status).toBe(200);
             expect(response).toHaveProperty('body.id');
@@ -143,14 +159,16 @@ describe('User-centric routes', () => {
 
         test('should 404 if user does not exist', async () => {
             const response = await request(server)
-                .get(`/users/${(Math.pow(2,31)-1).toString()}`);
+                .get(`/users/${(Math.pow(2,31)-1).toString()}`)
+                .set({'x-api-key': apiKey});
 
             expect(response.status).toBe(404);
         });
 
         test('should 404 if user id is out of range', async () => {
             const response = await request(server)
-                .get('/users/9999999999');
+                .get('/users/9999999999')
+                .set({'x-api-key': apiKey});
 
             expect(response.status).toBe(404);
         });
@@ -162,7 +180,10 @@ describe('User-centric routes', () => {
             const newName = `${user.name}_post_update`;
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', user.token)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                })
                 .send({
                     email: user.email,
                     name: newName
@@ -182,7 +203,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', otherUser.token)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': otherUser.token
+                })
                 .send({
                     email: user.email,
                     name: user.name
@@ -197,7 +221,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', user.token)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                })
                 .send({
                     email: `${user.email}update`,
                     name: `${user.name}update`,
@@ -213,7 +240,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', user.token)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                })
                 .send({
                     email: `${user.email}update`,
                     name: `${user.name}update`,
@@ -230,7 +260,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .put(`/users/${user.id}`)
-                .set('Authorization', adminUser.token)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': adminUser.token
+                })
                 .send({
                     email: `${user.email}update`,
                     name: `${user.name}update`,
@@ -245,7 +278,8 @@ describe('User-centric routes', () => {
     describe('GET - /users/me', () => {
         test('should get unauthorized with no token', async () => {
             const response = await request(server)
-                .get('/users/me');
+                .get('/users/me')
+                .set({'x-api-key': apiKey});
 
             expect(response.status).toBe(401);
         });
@@ -254,7 +288,10 @@ describe('User-centric routes', () => {
 
             const response = await request(server)
                 .get('/users/me')
-                .set('Authorization', user.token);
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                });
 
             expect(response.status).toBe(200);
             expect(response).toHaveProperty('body.id');

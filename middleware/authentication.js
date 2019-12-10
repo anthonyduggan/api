@@ -19,12 +19,3 @@ module.exports = async (ctx, next) => {
 
     await next();
 };
-
-async function func1() { return await 1; }
-async function func2() {
-    let test = 0;
-    const result = await func1();
-    test = result;
-    return test;
-}
-func2();
