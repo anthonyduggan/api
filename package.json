@@ -17,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^6.7.1",
+    "eslint": "^6.8.0",
     "jest": "^24.9.0",
     "koa-logger": "^3.2.0",
     "nodemon": "^2.0.0",
@@ -25,11 +25,11 @@
     "supertest": "^4.0.2"
   },
   "dependencies": {
-    "@bugsnag/js": "^6.4.3",
-    "@bugsnag/plugin-koa": "^6.4.1",
+    "@bugsnag/js": "^6.5.0",
+    "@bugsnag/plugin-koa": "^6.5.0",
     "@koa/cors": "^3.0.0",
     "argon2": "^0.25.1",
-    "aws-sdk": "^2.576.0",
+    "aws-sdk": "^2.596.0",
     "aws-xray-sdk-core": "^2.5.0",
     "debug": "^4.1.1",
     "ejs": "^2.7.4",
@@ -42,6 +42,6 @@
     "nanoid": "^2.1.7",
     "nconf": "^0.10.0",
     "objection": "^1.6.11",
-    "pg": "^7.14.0"
+    "pg": "^7.15.1"
   }
 }
