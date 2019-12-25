@@ -1,6 +1,7 @@
 const Router = require('koa-router');
 const users = require('../controllers/users');
 const Joi = require('../middleware/joi');
+const Authorization = require('../middleware/authorization');
 
 const router = new Router();
 
@@ -12,10 +13,25 @@ const USER = {
     })
 };
 
-router.post('/', Joi.middleware(USER), users.create);
-router.get('/', users.list);
-router.get('/me', users.me);
-router.get('/:user_id', users.get);
-router.put('/:user_id', Joi.middleware(USER), users.update);
+const ROLES = {
+    body: Joi.array().items(Joi.string())
+};
+
+router.post('/',
+    Joi.middleware(USER),
+    users.create);
+router.get('/',
+    users.list);
+router.get('/me',
+    users.me);
+router.get('/:user_id',
+    users.get);
+router.put('/:user_id',
+    Joi.middleware(USER),
+    users.update);
+router.put('/:user_id/roles',
+    Authorization(['admin']),
+    Joi.middleware(ROLES),
+    users.updateRoles);
 
 module.exports = router;
