@@ -13,8 +13,8 @@ Joi.middleware = (routeParamsDefinition) => {
     }
 
     return async (ctx, next) => {
-        const bodyResult = Joi.validate(ctx.request.body, bodySchema);
-        const queryResult = Joi.validate(ctx.request.query, querySchema);
+        const bodyResult = bodySchema.validate(ctx.request.body);
+        const queryResult = querySchema.validate(ctx.request.query);
 
         // Eventually this can probably return what is wrong in the request, for now just return a generic error
 

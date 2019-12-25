@@ -8,20 +8,20 @@ const EMAIL = Joi.string().email().min(6).max(255).required();
 const PASSWORD = Joi.string().min(8).required(); // Probably going to want some better validation here
 
 router.post('/login', Joi.middleware({
-    body: {
+    body: Joi.object({
         email: EMAIL,
         password: PASSWORD
-    }
+    })
 }), users.login);
 router.post('/reset', Joi.middleware({
-    body: {
+    body: Joi.object({
         email: EMAIL
-    }
+    })
 }), users.forgot);
 router.post('/reset/:token', Joi.middleware({
-    body: {
+    body: Joi.object({
         password: PASSWORD
-    }
+    })
 }), users.reset);
 
 module.exports = router;

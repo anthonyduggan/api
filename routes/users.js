@@ -5,11 +5,11 @@ const Joi = require('../middleware/joi');
 const router = new Router();
 
 const USER = {
-    body: {
+    body: Joi.object({
         email: Joi.string().email().min(6).max(255).required(),
         name: Joi.string().min(2).max(255).required(),
         roles: Joi.array().items(Joi.string())
-    }
+    })
 };
 
 router.post('/', Joi.middleware(USER), users.create);
