@@ -13,7 +13,7 @@ module.exports = async (ctx, next) => {
         const sessionToken = await SessionToken.query().findOne({
             id: hashedToken,
             active: true
-        }).eager('user.roles');
+        }).withGraphFetched('user.roles');
         ctx.state.user = sessionToken.user; // eslint-disable-line require-atomic-updates
     }
 

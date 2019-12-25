@@ -76,7 +76,7 @@ async function reset(ctx) {
             id: hashedToken,
             active: true
         })
-        .eager('user');
+        .withGraphFetched('user');
     let success = false;
     if (resetToken && resetToken.user) {
         const hashedPassword = await argon2.hash(password, config.get('argon2'));
@@ -142,7 +142,7 @@ async function list(ctx) {
     let query = User.query()
         .select('users.id', 'users.created_at', 'users.name', 'users.verified', 'users.active')
         .where('active', true)
-        .eager('roles')
+        .withGraphFetched('roles')
         .page(page-1, count);
     if (isAdmin === true) {
         query = query
@@ -171,7 +171,7 @@ async function get(ctx) {
             .findById(userId)
             .select('users.id', 'users.created_at', 'users.name', 'users.verified', 'users.active')
             .where('active', true)
-            .eager('roles');
+            .withGraphFetched('roles');
         if (isAdmin === true || ctx.state.user.id === userId) {
             query = query
                 .select('users.email');
@@ -199,7 +199,7 @@ async function me(ctx) {
         .findById(userId)
         .select('users.id', 'users.created_at', 'users.name', 'users.verified', 'users.active', 'users.email')
         .where('active', true)
-        .eager('roles');
+        .withGraphFetched('roles');
 
     ctx.ok(user);
 }
@@ -219,7 +219,7 @@ async function update(ctx) {
                 email,
                 name
             })
-            .eager('roles');
+            .withGraphFetched('roles');
 
         ctx.ok(user);
     } else {
@@ -236,7 +236,7 @@ async function updateRoles(ctx) {
     const roles = ctx.request.body;
     let user = await User.query()
         .findById(userId)
-        .eager('roles');
+        .withGraphFetched('roles');
 
     const existingRoles = user.roles.map((r) => r.code);
 
@@ -264,7 +264,7 @@ async function updateRoles(ctx) {
 
     user = await User.query()
         .findById(userId)
-        .eager('roles');
+        .withGraphFetched('roles');
 
     ctx.ok(user.roles);
 }
