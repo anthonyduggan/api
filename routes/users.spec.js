@@ -217,6 +217,43 @@ describe('User-centric routes', () => {
             expect(response.body.error.code).toBe('FORBIDDEN');
         });
     });
+    describe('POST - /users/:user_id/deactivate', () => {
+        test('should get forbidden if you are not allowed', async () => {
+            const user = await _createRandomUser();
+            const otherUser = await _createRandomUser();
+
+            const response = await request(server)
+                .post(`/users/${user.id}/deactivate`)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': otherUser.token
+                })
+                .send();
+
+            expect(response.status).toBe(403);
+            expect(response).toHaveProperty('body.error.code');
+            expect(response.body.error.code).toBe('FORBIDDEN');
+        });
+        test('should deactivate the user', async () => {
+            const user = await _createRandomUser();
+
+            const response = await request(server)
+                .post(`/users/${user.id}/deactivate`)
+                .set({
+                    'x-api-key': apiKey,
+                    'Authorization': user.token
+                })
+                .send();
+
+            expect(response.status).toBe(204);
+
+            const deactivatedUser = await User.query()
+                .first()
+                .findById(user.id)
+                .where('active', false);
+            expect(deactivatedUser).not.toBe(null);
+        });
+    });
     describe('PUT - /users/:user_id/roles', () => {
         test('should get forbidden if not an admin', async () => {
             const user = await _createRandomUser();

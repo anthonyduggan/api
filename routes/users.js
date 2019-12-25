@@ -29,6 +29,8 @@ router.get('/:user_id',
 router.put('/:user_id',
     Joi.middleware(USER),
     users.update);
+router.post('/:user_id/deactivate',
+    users.deactivate);
 router.put('/:user_id/roles',
     Authorization(['admin']),
     Joi.middleware(ROLES),

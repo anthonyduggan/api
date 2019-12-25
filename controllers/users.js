@@ -89,6 +89,7 @@ async function reset(ctx) {
             await resetToken.user
                 .$query(trx)
                 .patch({
+                    active: true,
                     verified: true,
                     password: hashedPassword
                 });
@@ -269,6 +270,30 @@ async function updateRoles(ctx) {
     ctx.ok(user.roles);
 }
 
+async function deactivate(ctx) {
+    const userId = parseInt(ctx.params.user_id);
+
+    const isUser = ctx.state.user.id === userId;
+    const isAdmin = ctx.state.user.roles.map((r) => r.code).includes('admin');
+    const hasPermission = isUser || isAdmin;
+
+    if (hasPermission === true) {
+        await User.query()
+            .findById(userId)
+            .patch({
+                active: false
+            });
+
+        ctx.noContent();
+    } else {
+        ctx.forbidden({
+            error: {
+                code: 'FORBIDDEN'
+            }
+        });
+    }
+}
+
 module.exports = {
     login,
     forgot,
@@ -278,5 +303,6 @@ module.exports = {
     get,
     me,
     update,
-    updateRoles
+    updateRoles,
+    deactivate
 };
