@@ -1,5 +1,5 @@
 const request = require('supertest');
-const nanoid = require('nanoid/async');
+const nanoid = require('nanoid/async').nanoid;
 const argon2 = require('argon2');
 const crypto = require('crypto');
 
