@@ -241,27 +241,30 @@ async function updateRoles(ctx) {
 
     const existingRoles = user.roles.map((r) => r.code);
 
-    await user
-        .$relatedQuery('roles')
-        .unrelate()
-        .whereNotIn('code', roles);
+    const knex = User.knex();
+    await transaction(knex, async (trx) => {
+        await user
+            .$relatedQuery('roles', trx)
+            .unrelate()
+            .whereNotIn('code', roles);
 
-    /*
-        The jank levels are high but the alternative was to loop over
-        every role that needed to be added and execute a new query on
-        it since Objection only supports multi insert on postgres
-    */
-    const knex = user.$knex();
-    await knex
-        .from('user_role_members')
-        .from(knex.raw('?? (??, ??)', ['user_role_members', 'user_id', 'user_role_id']))
-        .insert(function() {
-            this
-                .select(knex.raw('? as ??', [userId, 'user_id']), 'id as user_role_id')
-                .from('user_roles')
-                .whereIn('code', roles)
-                .whereNotIn('code', existingRoles);
-        });
+        /*
+            The jank levels are high but the alternative was to loop over
+            every role that needed to be added and execute a new query on
+            it since Objection only supports multi insert on postgres
+        */
+        await knex
+            .transacting(trx)
+            .from('user_role_members')
+            .from(knex.raw('?? (??, ??)', ['user_role_members', 'user_id', 'user_role_id']))
+            .insert(function () {
+                this
+                    .select(knex.raw('? as ??', [userId, 'user_id']), 'id as user_role_id')
+                    .from('user_roles')
+                    .whereIn('code', roles)
+                    .whereNotIn('code', existingRoles);
+            });
+    });
 
     user = await User.query()
         .findById(userId)
