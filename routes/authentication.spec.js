@@ -1,7 +1,6 @@
 const request = require('supertest');
 const nanoid = require('nanoid/async').nanoid;
 const argon2 = require('argon2');
-const crypto = require('crypto');
 
 const app = require('../app');
 const config = require('../config');
@@ -9,6 +8,7 @@ const User = require('../models/User');
 const ResetToken = require('../models/ResetToken');
 const SessionToken = require('../models/SessionToken');
 const APIKey = require('../models/APIKey');
+const hash = require('../utils/hash');
 
 async function _createRandomUser(verified=false) {
     const name = await nanoid(10);
@@ -29,7 +29,7 @@ async function _createRandomUser(verified=false) {
 
 async function _insertResetTokenByEmail(email) {
     const resetToken = await nanoid();
-    const hashedToken = crypto.createHash('sha3-512').update(resetToken).digest('hex');
+    const hashedToken = hash(resetToken);
     const user = await User.query().findOne({email: email});
     await user
         .$relatedQuery('reset_tokens')
@@ -39,7 +39,7 @@ async function _insertResetTokenByEmail(email) {
 
 async function _insertApiKey() {
     const key = await nanoid();
-    const hashedKey = crypto.createHash('sha3-512').update(key).digest('hex');
+    const hashedKey = hash(key);
     await APIKey.query().insert({id: hashedKey, active: true});
     return key;
 }

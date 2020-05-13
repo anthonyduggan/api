@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const hash = require('../utils/hash');
 const SessionToken = require('../models/SessionToken');
 
 module.exports = async (ctx, next) => {
@@ -9,7 +9,7 @@ module.exports = async (ctx, next) => {
     };
 
     if (token !== undefined) {
-        const hashedToken = crypto.createHash('sha3-512').update(token).digest('hex');
+        const hashedToken = hash(token);
         const sessionToken = await SessionToken.query().findOne({
             id: hashedToken,
             active: true
