@@ -1,4 +1,4 @@
-const Router = require('koa-router');
+const Router = require('@koa/router');
 const users = require('../controllers/users');
 const Joi = require('../middleware/joi');
 const Authorization = require('../middleware/authorization');
